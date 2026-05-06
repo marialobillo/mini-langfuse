@@ -4,6 +4,12 @@
 
 Acepted
 
+## Context and Problem Statement
+
+Mini-Langfuse is a Python LLM tracing tool. The real Langfuse has three features (patas): tracing, prompt management, and evals. Building all three is a multi-month effort. Building only tracing is faster but means we miss exposure to other areas of LLM observability.
+
+We need to decide the scope for version 1. The decision is not trivial because scope affects time to a working demo, depth of learning, and what aspects of LLM observability we'll actually understand hands-on.
+
 ## Considered Options
 
 * Option A: Tracing only 
