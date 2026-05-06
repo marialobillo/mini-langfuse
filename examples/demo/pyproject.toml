@@ -1,0 +1,18 @@
+[project]
+name = "mini-langfuse-demo"
+version = "0.1.0"
+description = "Demo app using mini-langfuse-sdk with Ollama"
+requires-python = ">=3.12"
+dependencies = [
+    "mini-langfuse-sdk",
+]
+
+[tool.uv.sources]
+mini-langfuse-sdk = { workspace = true }
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/mini_langfuse_demo"]

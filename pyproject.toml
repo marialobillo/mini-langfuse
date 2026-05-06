@@ -1,0 +1,21 @@
+[project]
+name = "mini-langfuse-workspace"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = [
+    "mini-langfuse-sdk",
+    "mini-langfuse-backend",
+    "mini-langfuse-demo",
+]
+
+[tool.uv.workspace]
+members = [
+    "packages/sdk",
+    "packages/backend",
+    "examples/demo",
+]
+
+[tool.uv.sources]
+mini-langfuse-sdk = { workspace = true }
+mini-langfuse-backend = { workspace = true }
+mini-langfuse-demo = { workspace = true }
