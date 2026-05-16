@@ -16,7 +16,7 @@ def test_decorated_function_works_with_keyword_arguments():
     traced_func = trace(original_func)
     assert traced_func(a=2,b=3) == 6
 
-def test_trace_preserves_function_name():
+def test_trace_preserves_function_metadata():
     def my_function():
         return 42
     
