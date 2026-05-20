@@ -1,6 +1,8 @@
 import pytest
+import time
 from mini_langfuse_sdk import trace
 from mini_langfuse_sdk.tracer import default_tracer
+
 
 @pytest.fixture(autouse=True)
 def clean_tracer():
@@ -54,3 +56,14 @@ def test_trace_captures_output():
     
     add(2, 3)
     assert default_tracer.records[-1]["output"] == 5
+
+def test_trace_captures_latency():
+    @trace
+    def my_function():
+        time.sleep(0.05)
+        return 42
+    
+    my_function()
+    latency = default_tracer.records[-1]["latency_ms"]
+    assert isinstance(latency, float)
+    assert latency >= 0
