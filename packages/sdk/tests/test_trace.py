@@ -67,3 +67,14 @@ def test_trace_captures_latency():
     latency = default_tracer.records[-1]["latency_ms"]
     assert isinstance(latency, float)
     assert latency >= 0
+
+def test_trace_captures_started_at():
+    @trace
+    def my_function():
+        return 42
+    
+    my_function()
+
+    started_at = default_tracer.records[-1]["started_at"]
+    assert isinstance(started_at, str)
+    assert started_at.endswith("+00:00")
