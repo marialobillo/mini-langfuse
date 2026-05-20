@@ -45,5 +45,12 @@ def test_trace_captures_positional_input():
         return a + b
     
     add(2, 3)
-
     assert default_tracer.records[-1]["input"] == {"args": [2, 3], "kwargs": {}}
+
+def test_trace_captures_output():
+    @trace
+    def add(a, b):
+        return a + b
+    
+    add(2, 3)
+    assert default_tracer.records[-1]["output"] == 5
