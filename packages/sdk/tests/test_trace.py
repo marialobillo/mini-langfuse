@@ -1,4 +1,11 @@
+import pytest
 from mini_langfuse_sdk import trace
+from mini_langfuse_sdk.tracer import default_tracer
+
+@pytest.fixture(autouse=True)
+def clean_tracer():
+    default_tracer.records.clear()
+    yield
 
 
 def test_decorated_function_returns_same_value():
@@ -22,3 +29,12 @@ def test_trace_preserves_function_metadata():
     
     traced = trace(my_function)
     assert traced.__name__ == "my_function"
+
+def test_tracer_captures_function_name():
+    @trace
+    def my_function():
+        return 42
+    
+    my_function()
+
+    assert default_tracer.records[-1]["name"] == "my_function"
