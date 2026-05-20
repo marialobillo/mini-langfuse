@@ -38,3 +38,12 @@ def test_tracer_captures_function_name():
     my_function()
 
     assert default_tracer.records[-1]["name"] == "my_function"
+
+def test_trace_captures_positional_input():
+    @trace
+    def add(a, b):
+        return a + b
+    
+    add(2, 3)
+
+    assert default_tracer.records[-1]["input"] == {"args": [2, 3], "kwargs": {}}
