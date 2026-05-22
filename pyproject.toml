@@ -19,3 +19,8 @@ members = [
 mini-langfuse-sdk = { workspace = true }
 mini-langfuse-backend = { workspace = true }
 mini-langfuse-demo = { workspace = true }
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.3",
+]
