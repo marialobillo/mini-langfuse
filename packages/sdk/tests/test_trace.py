@@ -109,4 +109,24 @@ def test_trace_captures_error_details():
     assert record["error"]["type"] == "ValueError"
     assert record["error"]["message"] == "boom"
 
+def test_trace_records_latency_on_failure():
+    @trace
+    def my_function():
+        raise ValueError("boom")
     
+    with pytest.raises(ValueError):
+        my_function()
+
+    record = default_tracer.records[-1]
+    assert isinstance(record["latency_ms"], float)
+    assert record["latency_ms"] >= 0
+
+def test_trace_preserves_original_exception():
+    @trace
+    def my_function():
+        raise ValueError("boom")
+
+    with pytest.raises(ValueError) as exc_info:
+        my_function()
+
+    assert str(exc_info.value) == "boom"
