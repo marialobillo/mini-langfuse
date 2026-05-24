@@ -78,3 +78,55 @@ def test_trace_captures_started_at():
     started_at = default_tracer.records[-1]["started_at"]
     assert isinstance(started_at, str)
     assert started_at.endswith("+00:00")
+
+def test_trace_sets_error_none_on_success():
+    @trace
+    def my_function():
+        return 42
+    
+    my_function()
+
+    record = default_tracer.records[-1]
+    assert record["error"] is None
+
+def test_trace_propagates_exception():
+    @trace
+    def my_function():
+        raise ValueError("boom")
+    
+    with pytest.raises(ValueError):
+        my_function()
+
+def test_trace_captures_error_details():
+    @trace
+    def my_function():
+        raise ValueError("boom")
+    
+    with pytest.raises(ValueError):
+        my_function()
+    
+    record = default_tracer.records[-1]
+    assert record["error"]["type"] == "ValueError"
+    assert record["error"]["message"] == "boom"
+
+def test_trace_records_latency_on_failure():
+    @trace
+    def my_function():
+        raise ValueError("boom")
+    
+    with pytest.raises(ValueError):
+        my_function()
+
+    record = default_tracer.records[-1]
+    assert isinstance(record["latency_ms"], float)
+    assert record["latency_ms"] >= 0
+
+def test_trace_preserves_original_exception():
+    @trace
+    def my_function():
+        raise ValueError("boom")
+
+    with pytest.raises(ValueError) as exc_info:
+        my_function()
+
+    assert str(exc_info.value) == "boom"
