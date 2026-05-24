@@ -16,7 +16,8 @@ def trace(func):
             "input": {"args": list(args), "kwargs": kwargs},
             "output": result,
             "latency_ms": latency_ms,
-            "started_at": started_at
+            "started_at": started_at, 
+            "error": None,
         })
         return result
     return wrapper

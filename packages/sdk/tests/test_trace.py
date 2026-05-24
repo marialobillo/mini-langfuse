@@ -78,3 +78,13 @@ def test_trace_captures_started_at():
     started_at = default_tracer.records[-1]["started_at"]
     assert isinstance(started_at, str)
     assert started_at.endswith("+00:00")
+
+def test_trace_sets_error_none_on_success():
+    @trace
+    def my_function():
+        return 42
+    
+    my_function()
+
+    record = default_tracer.records[-1]
+    assert record["error"] is None
