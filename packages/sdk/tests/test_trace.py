@@ -88,3 +88,25 @@ def test_trace_sets_error_none_on_success():
 
     record = default_tracer.records[-1]
     assert record["error"] is None
+
+def test_trace_propagates_exception():
+    @trace
+    def my_function():
+        raise ValueError("boom")
+    
+    with pytest.raises(ValueError):
+        my_function()
+
+def test_trace_captures_error_details():
+    @trace
+    def my_function():
+        raise ValueError("boom")
+    
+    with pytest.raises(ValueError):
+        my_function()
+    
+    record = default_tracer.records[-1]
+    assert record["error"]["type"] == "ValueError"
+    assert record["error"]["message"] == "boom"
+
+    
