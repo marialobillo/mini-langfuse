@@ -3,6 +3,12 @@ import time
 from mini_langfuse_sdk import trace
 from mini_langfuse_sdk.tracer import default_tracer
 
+class FakeTracer:
+    def __init__(self):
+        self.captured = []
+    def capture(self, record):
+        self.captured.append(record)
+
 
 @pytest.fixture(autouse=True)
 def clean_tracer():
@@ -47,7 +53,7 @@ def test_trace_captures_positional_input():
         return a + b
     
     add(2, 3)
-    assert default_tracer.records[-1]["input"] == {"args": [2, 3], "kwargs": {}}
+    assert default_tracer.records[-1]["input"] == {"args": (2, 3), "kwargs": {}}
 
 def test_trace_captures_output():
     @trace
@@ -130,3 +136,16 @@ def test_trace_preserves_original_exception():
         my_function()
 
     assert str(exc_info.value) == "boom"
+
+def test_trace_uses_injected_tracer():
+    fake = FakeTracer()
+
+    @trace(tracer=fake)
+    def my_function(a, b):
+        return a + b
+    
+    my_function(2, 3)
+
+    assert len(fake.captured) == 1
+    assert fake.captured[0]["name"] == "my_function"
+    assert fake.captured[0]["output"] == 5
