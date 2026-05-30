@@ -3,6 +3,10 @@ import time
 from mini_langfuse_sdk import trace
 from mini_langfuse_sdk.tracer import default_tracer
 
+class BrokenTracer:
+    def capture(self, record):
+        raise RuntimeError("backend is down")
+
 class FakeTracer:
     def __init__(self):
         self.captured = []
@@ -149,3 +153,26 @@ def test_trace_uses_injected_tracer():
     assert len(fake.captured) == 1
     assert fake.captured[0]["name"] == "my_function"
     assert fake.captured[0]["output"] == 5
+
+def test_trace_silently_swallows_tracer_failure():
+    broken = BrokenTracer()
+
+    @trace(tracer=broken)
+    def my_function():
+        return 42
+
+    result = my_function()
+    assert result == 42
+
+def test_trace_logs_warning_when_tracer_fails(caplog):
+    broken = BrokenTracer()
+
+    @trace(tracer=broken)
+    def my_function():
+        return 42
+    
+    result = my_function()
+    assert result == 42
+    assert len(caplog.records) == 1
+    assert caplog.records[0].levelname == "WARNING"
+    assert "tracer" in caplog.records[0].message.lower()
