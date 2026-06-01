@@ -4,5 +4,6 @@ __version__ = "0.1.0"
 
 from mini_langfuse_sdk.trace import trace
 from mini_langfuse_sdk.tracer import InMemoryTracer
+from mini_langfuse_sdk.http_tracer import HTTPTracer
 
 __all__ = ["trace", "InMemoryTracer"]
