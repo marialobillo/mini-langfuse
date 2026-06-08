@@ -65,3 +65,22 @@ def test_http_tracer_reads_url_from_env_var(monkeypatch):
     tracer.capture({"name": "foo"})
 
     assert fake.calls[0]["url"] == "http://from-env.com/traces"
+
+def test_http_tracer_explicit_url_wins_over_env_var(monkeypatch):
+    monkeypatch.setenv("MINI_LANGFUSE_URL", "http://from-env.com/traces")
+    fake = FakeClient()
+
+    tracer = HTTPTracer(url="http://explicit.com/traces", client=fake)
+    tracer.capture({"name": "foo"})
+
+    assert fake.calls[0]["url"] == "http://explicit.com/traces"
+
+def test_http_tracer_does_nothing_when_url_is_missing(monkeypatch):
+    monkeypatch.delenv("MINI_LANGFUSE_URL", raising=False)
+    fake = FakeClient()
+
+    tracer = HTTPTracer(client=fake)
+
+    tracer.capture({"name": "foo"})
+
+    assert fake.calls == []
