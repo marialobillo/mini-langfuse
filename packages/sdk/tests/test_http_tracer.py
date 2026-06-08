@@ -111,3 +111,17 @@ def test_http_tracer_reads_api_key_from_env_var(monkeypatch):
     tracer =HTTPTracer(url="http://example.com/traces", client=fake)
     tracer.capture({"name": "foo"})
     assert fake.calls[0]["headers"] == {"Authorization": "Bearer key-from-env"}
+
+def test_http_tracer_explicit_api_key_wins_over_env_var(monkeypatch):
+    monkeypatch.setenv("MINI_LANGFUSE_API_KEY", "key-from-env")
+    fake = FakeClient()
+
+    tracer = HTTPTracer(
+        url="http://example.com/traces",
+        api_key="explicit-key",
+        client=fake,
+    )
+
+    tracer.capture({"name": "foo"})
+
+    assert fake.calls[0]["headers"] == {"Authorization": "Bearer explicit-key"}
