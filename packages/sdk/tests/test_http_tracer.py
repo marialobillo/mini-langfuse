@@ -56,3 +56,12 @@ def test_http_tracer_uses_configured_url():
     tracer.capture({"name": "foo"})
 
     assert fake.calls[0]["url"] == "https://my-custom-host.com/api/traces"
+
+def test_http_tracer_reads_url_from_env_var(monkeypatch):
+    monkeypatch.setenv("MINI_LANGFUSE_URL", "http://from-env.com/traces")
+    fake = FakeClient()
+
+    tracer = HTTPTracer(client=fake)
+    tracer.capture({"name": "foo"})
+
+    assert fake.calls[0]["url"] == "http://from-env.com/traces"
