@@ -103,3 +103,11 @@ def test_http_tracer_sends_api_key_in_authorization_header():
     )
     tracer.capture({"name": "foo"})
     assert fake.calls[0]["headers"] == {"Authorization": "Bearer secret-key-123"}
+
+def test_http_tracer_reads_api_key_from_env_var(monkeypatch):
+    monkeypatch.setenv("MINI_LANGFUSE_API_KEY", "key-from-env")
+    fake = FakeClient()
+
+    tracer =HTTPTracer(url="http://example.com/traces", client=fake)
+    tracer.capture({"name": "foo"})
+    assert fake.calls[0]["headers"] == {"Authorization": "Bearer key-from-env"}
