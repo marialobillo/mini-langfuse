@@ -5,8 +5,9 @@ import logging
 logger = logging.getLogger(__name__)
 
 class HTTPTracer:
-    def __init__(self, url=None, client=None):
+    def __init__(self, url=None, api_key=None, client=None):
         self.url = url or os.environ.get("MINI_LANGFUSE_URL")
+        self.api_key = api_key
         self.client = client or httpx.Client()
         if self.url is None:
             logger.warning("Mini-langfuse: URL not configured, traces will be discarded")
@@ -14,4 +15,5 @@ class HTTPTracer:
     def capture(self, record):
         if self.url is None:
             return
-        self.client.post(self.url, json=record)
+        headers = {"Authorization": f"Bearer {self.api_key}"}
+        self.client.post(self.url, json=record, headers=headers)

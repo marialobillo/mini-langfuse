@@ -12,7 +12,7 @@ class FakeClient:
 
 
 class FailingClient:
-    def post(self, url, json):
+    def post(self, url, json, headers=None):
         raise httpx.ConnectError("connection refused")
 
 
@@ -94,3 +94,12 @@ def test_http_tracer_logs_warning_when_url_is_missing(monkeypatch, caplog):
     assert any("url" in record.message.lower() for record in caplog.records)
     assert any(record.levelname == "WARNING" for record in caplog.records)
 
+def test_http_tracer_sends_api_key_in_authorization_header():
+    fake = FakeClient()
+    tracer = HTTPTracer(
+        url="http://example.com/traces",
+        api_key="secret-key-123",
+        client=fake,
+    )
+    tracer.capture({"name": "foo"})
+    assert fake.calls[0]["headers"] == {"Authorization": "Bearer secret-key-123"}
