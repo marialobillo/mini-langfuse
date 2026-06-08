@@ -1,13 +1,14 @@
 import httpx
 import pytest
+import logging
 from mini_langfuse_sdk import HTTPTracer, trace
 
 class FakeClient:
     def __init__(self):
         self.calls = []
 
-    def post(self, url, json):
-        self.calls.append({"url": url, "json": json})
+    def post(self, url, json, headers=None):
+        self.calls.append({"url": url, "json": json, "headers": headers})
 
 
 class FailingClient:
@@ -84,3 +85,12 @@ def test_http_tracer_does_nothing_when_url_is_missing(monkeypatch):
     tracer.capture({"name": "foo"})
 
     assert fake.calls == []
+
+def test_http_tracer_logs_warning_when_url_is_missing(monkeypatch, caplog):
+    monkeypatch.delenv("MINI_LANGFUSE_URL", raising=False)
+    with caplog.at_level(logging.WARNING):
+        HTTPTracer()
+
+    assert any("url" in record.message.lower() for record in caplog.records)
+    assert any(record.levelname == "WARNING" for record in caplog.records)
+
