@@ -18,7 +18,11 @@ class FailingClient:
 
 def test_http_tracer_posts_record_as_json():
     fake = FakeClient()
-    tracer = HTTPTracer(url="http://localhost:8000/traces", client=fake)
+    tracer = HTTPTracer(
+        url="http://localhost:8000/traces",
+        api_key="test-key",
+        client=fake,
+    )
 
     tracer.capture({"name": "foo"})
 
@@ -28,14 +32,22 @@ def test_http_tracer_posts_record_as_json():
 
 def test_http_tracer_propagates_http_errors():
     failing = FailingClient()
-    tracer = HTTPTracer(url="http://localhost:8000/traces", client=failing)
+    tracer = HTTPTracer(
+        url="http://localhost:8000/traces",
+        api_key="test-key",
+        client=failing,
+    )
 
     with pytest.raises(httpx.ConnectError):
         tracer.capture({"name": "foo"})
 
 def test_trace_with_http_tracer_posts_to_backend():
     fake = FakeClient()
-    http_tracer = HTTPTracer(url="http://localhost:8000/traces", client=fake)
+    http_tracer = HTTPTracer(
+        url="http://localhost:8000/traces",
+        api_key="test-key",
+        client=fake,
+    )
 
     @trace(tracer=http_tracer)
     def my_function():
@@ -52,7 +64,11 @@ def test_trace_with_http_tracer_posts_to_backend():
 
 def test_http_tracer_uses_configured_url():
     fake = FakeClient()
-    tracer = HTTPTracer(url="https://my-custom-host.com/api/traces", client=fake)
+    tracer = HTTPTracer(
+        url="https://my-custom-host.com/api/traces",
+        api_key="test-key",
+        client=fake,
+    )
 
     tracer.capture({"name": "foo"})
 
@@ -62,7 +78,7 @@ def test_http_tracer_reads_url_from_env_var(monkeypatch):
     monkeypatch.setenv("MINI_LANGFUSE_URL", "http://from-env.com/traces")
     fake = FakeClient()
 
-    tracer = HTTPTracer(client=fake)
+    tracer = HTTPTracer(client=fake, api_key="test-key")
     tracer.capture({"name": "foo"})
 
     assert fake.calls[0]["url"] == "http://from-env.com/traces"
@@ -71,7 +87,11 @@ def test_http_tracer_explicit_url_wins_over_env_var(monkeypatch):
     monkeypatch.setenv("MINI_LANGFUSE_URL", "http://from-env.com/traces")
     fake = FakeClient()
 
-    tracer = HTTPTracer(url="http://explicit.com/traces", client=fake)
+    tracer = HTTPTracer(
+        url="http://explicit.com/traces", 
+        api_key="test-key", 
+        client=fake
+    )
     tracer.capture({"name": "foo"})
 
     assert fake.calls[0]["url"] == "http://explicit.com/traces"
@@ -125,3 +145,13 @@ def test_http_tracer_explicit_api_key_wins_over_env_var(monkeypatch):
     tracer.capture({"name": "foo"})
 
     assert fake.calls[0]["headers"] == {"Authorization": "Bearer explicit-key"}
+
+def test_http_tracer_does_nothing_when_api_key_is_missing(monkeypatch):
+    monkeypatch.delenv("MINI_LANGFUSE_API_KEY", raising=False)
+    fake = FakeClient()
+
+    tracer = HTTPTracer(url="http://example.com/traces", client=fake)
+
+    tracer.capture({"name": "foo"})
+
+    assert fake.calls == []

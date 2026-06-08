@@ -13,7 +13,7 @@ class HTTPTracer:
             logger.warning("Mini-langfuse: URL not configured, traces will be discarded")
 
     def capture(self, record):
-        if self.url is None:
+        if self.url is None or self.api_key is None:
             return
         headers = {"Authorization": f"Bearer {self.api_key}"}
         self.client.post(self.url, json=record, headers=headers)
