@@ -155,3 +155,12 @@ def test_http_tracer_does_nothing_when_api_key_is_missing(monkeypatch):
     tracer.capture({"name": "foo"})
 
     assert fake.calls == []
+
+def test_http_tracer_logs_warning_when_api_key_is_missing(monkeypatch, caplog):
+    monkeypatch.delenv("MINI_LANGFUSE_API_KEY", raising=False)
+
+    with caplog.at_level(logging.WARNING):
+        HTTPTracer(url="http://example.com/traces")
+
+    assert any("api" in record.message.lower() for record in caplog.records)
+    assert any(record.levelname == "WARNING" for record in caplog.records)

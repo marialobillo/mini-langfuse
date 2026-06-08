@@ -11,6 +11,8 @@ class HTTPTracer:
         self.client = client or httpx.Client()
         if self.url is None:
             logger.warning("Mini-langfuse: URL not configured, traces will be discarded")
+        if self.api_key is None:
+            logger.warning("Mini-Langfuse: API key not configured, traces will be discarded")
 
     def capture(self, record):
         if self.url is None or self.api_key is None:
