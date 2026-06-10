@@ -16,4 +16,5 @@ def trace_span(name, tracer=None):
             "name": name,
             "latency_ms": latency_ms,
             "started_at": started_at,
+            "error": None,
             })

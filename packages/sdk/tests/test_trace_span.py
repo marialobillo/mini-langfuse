@@ -24,3 +24,11 @@ def test_trace_span_captures_started_at():
     record = tracer.records[-1]
     assert isinstance(record["started_at"], str)
     assert record["started_at"].endswith("+00:00")
+
+def test_trace_span_sets_error_none_on_success():
+    tracer = InMemoryTracer()
+    with trace_span("my_block", tracer=tracer):
+        pass
+
+    record = tracer.records[-1]
+    assert record["error"] is None
