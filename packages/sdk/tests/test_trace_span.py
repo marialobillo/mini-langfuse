@@ -42,3 +42,10 @@ def test_trace_span_captures_and_propagates_exception():
     
     record = tracer.records[-1]
     assert record["error"] == {"type": "ValueError", "message": "boom"}
+
+def test_trace_span_uses_injected_tracer():
+    injected_tracer = InMemoryTracer()
+    with trace_span("foo", tracer=injected_tracer):
+        pass
+
+    assert len(injected_tracer.records) == 1
