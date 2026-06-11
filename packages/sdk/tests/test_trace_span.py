@@ -49,3 +49,27 @@ def test_trace_span_uses_injected_tracer():
         pass
 
     assert len(injected_tracer.records) == 1
+
+def test_trace_span_silently_swallows_tracer_failure():
+    class BrokenTracer:
+        def capture(self, record):
+            raise RuntimeError("tracer down")
+        
+    with trace_span("foo", tracer=BrokenTracer()):
+        pass
+
+def test_trace_span_logs_warning_when_tracer_fails(caplog):
+    import logging
+
+    class BrokenTracer:
+        def capture(self, record):
+            raise RuntimeError("tracer down")
+
+    with caplog.at_level(logging.WARNING):
+        with trace_span("foo", tracer=BrokenTracer()):
+            pass
+
+    assert any(
+        record.levelname == "WARNING" and "tracer" in record.message.lower()
+        for record in caplog.records
+    )
