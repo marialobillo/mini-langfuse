@@ -199,3 +199,33 @@ async def test_trace_captures_resolved_output_for_async_function():
     await my_async_function()
 
     assert tracer.records[-1]["output"] == 42
+
+@pytest.mark.anyio
+async def test_trace_measures_real_latency_for_async_function():
+    import asyncio
+
+    tracer = InMemoryTracer()
+
+    @trace(tracer=tracer)
+    async def slow_async_function():
+        await asyncio.sleep(0.05)   # 50 ms
+        return "done"
+
+    await slow_async_function()
+
+    latency = tracer.records[-1]["latency_ms"]
+    assert latency >= 40
+
+@pytest.mark.anyio
+async def test_trace_async_captures_and_propagates_exception():
+    tracer = InMemoryTracer()
+
+    @trace(tracer=tracer)
+    async def failing_async_function():
+        raise ValueError("async boom")
+
+    with pytest.raises(ValueError):
+        await failing_async_function()
+
+    record = tracer.records[-1]
+    assert record["error"] == {"type": "ValueError", "message": "async boom"}
