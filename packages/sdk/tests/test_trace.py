@@ -1,7 +1,7 @@
 import pytest
 import time
 from mini_langfuse_sdk import trace
-from mini_langfuse_sdk.tracer import default_tracer
+from mini_langfuse_sdk.tracer import InMemoryTracer, default_tracer
 
 class BrokenTracer:
     def capture(self, record):
@@ -176,3 +176,26 @@ def test_trace_logs_warning_when_tracer_fails(caplog):
     assert len(caplog.records) == 1
     assert caplog.records[0].levelname == "WARNING"
     assert "tracer" in caplog.records[0].message.lower()
+
+@pytest.mark.anyio
+async def test_decorated_async_function_returns_same_value():
+    tracer = InMemoryTracer()
+    
+    @trace(tracer=tracer)
+    async def my_async_function():
+        return 42
+    
+    result = await my_async_function()
+    assert result == 42
+
+@pytest.mark.anyio
+async def test_trace_captures_resolved_output_for_async_function():
+    tracer = InMemoryTracer()
+
+    @trace(tracer=tracer)
+    async def my_async_function():
+        return 42
+
+    await my_async_function()
+
+    assert tracer.records[-1]["output"] == 42
