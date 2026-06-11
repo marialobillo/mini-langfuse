@@ -2,6 +2,7 @@ from functools import wraps, partial
 import time
 import logging
 from datetime import datetime, timezone
+from mini_langfuse_sdk._capture import build_error, safe_capture
 from mini_langfuse_sdk.tracer import default_tracer
 
 logger = logging.getLogger(__name__)
@@ -24,12 +25,11 @@ def trace(func=None, *, tracer=None):
             output = func(*args, **kwargs)
             return output
         except Exception as e:
-            error = {"type": type(e).__name__, "message": str(e)}
+            error = build_error(e)
             raise
         finally:
             latency_ms = (time.perf_counter() - start) * 1000
-            try:
-                tracer.capture({
+            safe_capture(tracer, {
                     "name": func.__name__, 
                     "input": {"args": args, "kwargs": kwargs},
                     "output": output,
@@ -37,9 +37,5 @@ def trace(func=None, *, tracer=None):
                     "started_at": started_at, 
                     "error": error,
                 })
-            except Exception:
-                logger.warning("Tracer failed to capture; trace lost", exc_info=True)
 
-
-    
     return wrapper

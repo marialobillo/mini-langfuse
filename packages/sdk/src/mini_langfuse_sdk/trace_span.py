@@ -1,7 +1,11 @@
 import time
+import logging
 from contextlib import contextmanager
 from datetime import datetime, timezone
+from mini_langfuse_sdk._capture import build_error, safe_capture
 from mini_langfuse_sdk.tracer import default_tracer
+
+logger = logging.getLogger(__name__)
 
 @contextmanager
 def trace_span(name, tracer=None):
@@ -13,13 +17,14 @@ def trace_span(name, tracer=None):
     try:
         yield
     except Exception as e:
-        error = {"type": type(e).__name__, "message": str(e)}
+        error = build_error(e)
         raise
     finally:
         latency_ms = (time.perf_counter() - start) * 1000
-        tracer.capture({
-            "name": name,
-            "latency_ms": latency_ms,
-            "started_at": started_at,
-            "error": error,
+        safe_capture(tracer, {
+                "name": name,
+                "latency_ms": latency_ms,
+                "started_at": started_at,
+                "error": error,
             })
+        
