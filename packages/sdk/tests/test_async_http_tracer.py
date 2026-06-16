@@ -108,3 +108,22 @@ async def test_async_tracer_flushes_automatically_when_batch_size_reached():
     ]
 
     await tracer.stop()
+
+@pytest.mark.anyio
+async def test_async_tracer_start_is_idempotent():
+    fake = FakeClient()
+    tracer = AsyncHTTPTracer(
+        url="http://example.com/traces",
+        api_key="test-key",
+        client=fake,
+    )
+
+    await tracer.start()
+    first_task = tracer._worker_task
+
+    await tracer.start()
+    second_task = tracer._worker_task
+
+    assert first_task is second_task
+
+    await tracer.stop()

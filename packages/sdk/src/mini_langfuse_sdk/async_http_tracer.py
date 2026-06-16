@@ -17,6 +17,8 @@ class AsyncHTTPTracer:
         self._queue.put_nowait(record)
 
     async def start(self):
+        if self._worker_task is not None:
+            return
         self._worker_task = asyncio.create_task(self._worker_loop())
 
     async def stop(self):
