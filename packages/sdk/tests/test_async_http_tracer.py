@@ -108,3 +108,85 @@ async def test_async_tracer_flushes_automatically_when_batch_size_reached():
     ]
 
     await tracer.stop()
+
+@pytest.mark.anyio
+async def test_async_tracer_start_is_idempotent():
+    fake = FakeClient()
+    tracer = AsyncHTTPTracer(
+        url="http://example.com/traces",
+        api_key="test-key",
+        client=fake,
+    )
+
+    await tracer.start()
+    first_task = tracer._worker_task
+
+    await tracer.start()
+    second_task = tracer._worker_task
+
+    assert first_task is second_task
+
+    await tracer.stop()
+
+@pytest.mark.anyio
+async def test_async_tracer_reads_url_from_env_var(monkeypatch):
+    monkeypatch.setenv("MINI_LANGFUSE_URL", "http://from-env.com/traces")
+    fake = FakeClient()
+    tracer = AsyncHTTPTracer(api_key="test-key", client=fake)
+
+    tracer.capture({"name": "foo"})
+    await tracer.flush()
+
+    assert fake.calls[0]["url"] == "http://from-env.com/traces"
+
+    
+@pytest.mark.anyio
+async def test_async_tracer_reads_api_key_from_env_var(monkeypatch):
+    monkeypatch.setenv("MINI_LANGFUSE_API_KEY", "key-from-env")
+    fake = FakeClient()
+    tracer = AsyncHTTPTracer(url="http://example.com/traces", client=fake)
+
+    tracer.capture({"name": "foo"})
+    await tracer.flush()
+
+    assert fake.calls[0]["headers"] == {"Authorization": "Bearer key-from-env"}
+
+
+@pytest.mark.anyio
+async def test_async_tracer_explicit_url_wins_over_env_var(monkeypatch):
+    monkeypatch.setenv("MINI_LANGFUSE_URL", "http://from-env.com/traces")
+    fake = FakeClient()
+    tracer = AsyncHTTPTracer(
+        url="http://explicit.com/traces",
+        api_key="test-key",
+        client=fake,
+    )
+
+    tracer.capture({"name": "foo"})
+    await tracer.flush()
+
+    assert fake.calls[0]["url"] == "http://explicit.com/traces"
+
+
+@pytest.mark.anyio
+async def test_async_tracer_does_nothing_when_url_is_missing(monkeypatch):
+    monkeypatch.delenv("MINI_LANGFUSE_URL", raising=False)
+    fake = FakeClient()
+    tracer = AsyncHTTPTracer(api_key="test-key", client=fake)
+
+    tracer.capture({"name": "foo"})
+    await tracer.flush()
+
+    assert fake.calls == []
+
+
+@pytest.mark.anyio
+async def test_async_tracer_does_nothing_when_api_key_is_missing(monkeypatch):
+    monkeypatch.delenv("MINI_LANGFUSE_API_KEY", raising=False)
+    fake = FakeClient()
+    tracer = AsyncHTTPTracer(url="http://example.com/traces", client=fake)
+
+    tracer.capture({"name": "foo"})
+    await tracer.flush()
+
+    assert fake.calls == []

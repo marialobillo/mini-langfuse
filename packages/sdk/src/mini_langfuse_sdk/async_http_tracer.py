@@ -1,22 +1,34 @@
 import asyncio
 import logging
+import os
+
 import httpx
 
 logger = logging.getLogger(__name__)
 
+
 class AsyncHTTPTracer:
-    def __init__(self, url, api_key, client=None, batch_size=50):
-        self.url = url
-        self.api_key = api_key
+    def __init__(self, url=None, api_key=None, client=None, batch_size=50):
+        self.url = url or os.environ.get("MINI_LANGFUSE_URL")
+        self.api_key = api_key or os.environ.get("MINI_LANGFUSE_API_KEY")
         self.client = client or httpx.Client()
         self.batch_size = batch_size
         self._queue = asyncio.Queue()
         self._worker_task = None
 
+        if self.url is None:
+            logger.warning("Mini-Langfuse: URL not configured, traces will be discarded")
+        if self.api_key is None:
+            logger.warning("Mini-Langfuse: API key not configured, traces will be discarded")
+
     def capture(self, record):
+        if self.url is None or self.api_key is None:
+            return
         self._queue.put_nowait(record)
 
     async def start(self):
+        if self._worker_task is not None:
+            return
         self._worker_task = asyncio.create_task(self._worker_loop())
 
     async def stop(self):
@@ -30,6 +42,8 @@ class AsyncHTTPTracer:
         self._worker_task = None
 
     async def flush(self):
+        if self.url is None or self.api_key is None:
+            return
         batch = []
         while not self._queue.empty():
             batch.append(self._queue.get_nowait())
@@ -46,6 +60,8 @@ class AsyncHTTPTracer:
                 batch = []
 
     async def _send_batch(self, batch):
+        if self.url is None or self.api_key is None:
+            return
         try:
             self.client.post(
                 self.url,
