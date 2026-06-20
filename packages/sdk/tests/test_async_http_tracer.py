@@ -190,3 +190,29 @@ async def test_async_tracer_does_nothing_when_api_key_is_missing(monkeypatch):
     await tracer.flush()
 
     assert fake.calls == []
+
+
+@pytest.mark.anyio
+async def test_async_tracer_flushes_after_interval_even_if_batch_not_full():
+    fake = FakeClient()
+    tracer = AsyncHTTPTracer(
+        url="http://example.com/traces",
+        api_key="test-key",
+        client=fake,
+        batch_size=100,
+        flush_interval=0.05,
+    )
+    await tracer.start()
+
+    tracer.capture({"name": "first"})
+    tracer.capture({"name": "second"})
+
+    await asyncio.sleep(0.15)
+
+    assert len(fake.calls) == 1
+    assert fake.calls[0]["json"] == [
+        {"name": "first"},
+        {"name": "second"},
+    ]
+
+    await tracer.stop()   
