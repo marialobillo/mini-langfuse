@@ -3,13 +3,10 @@ import logging
 import uuid
 from contextlib import contextmanager
 from datetime import datetime, timezone
-from mini_langfuse_sdk._capture import build_error, safe_capture
+from mini_langfuse_sdk._capture import build_error, safe_capture, _current_span_id, _current_trace_id
 from mini_langfuse_sdk.tracer import default_tracer
-from contextvars import ContextVar
 
 logger = logging.getLogger(__name__)
-_current_trace_id: ContextVar = ContextVar("current_trace_id", default=None)
-_current_span_id: ContextVar = ContextVar("current_span_id", default=None)
 
 
 @contextmanager

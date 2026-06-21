@@ -158,3 +158,34 @@ def test_trace_captures_trace_id_span_id_and_parent_span_id():
     assert isinstance(record["span_id"], str)
     assert len(record["span_id"]) > 0
     assert record["parent_span_id"] is None
+
+def test_trace_span_inside_traced_function_inherits_parent():
+    tracer = InMemoryTracer()
+
+    @trace(tracer=tracer)
+    def outer():
+        with trace_span("inner", tracer=tracer):
+            pass
+
+    outer()
+    inner_record = tracer.records[0]
+    outer_record = tracer.records[1]
+
+    assert inner_record["trace_id"] == outer_record["trace_id"]
+    assert inner_record["parent_span_id"] == outer_record["span_id"]
+
+def test_traced_function_inside_trace_span_inherits_parent():
+    tracer = InMemoryTracer()
+
+    @trace(tracer=tracer)
+    def inner_function():
+        return 42
+
+    with trace_span("outer", tracer=tracer):
+        inner_function()
+
+    inner_record = tracer.records[0]
+    outer_record = tracer.records[1]
+
+    assert inner_record["trace_id"] == outer_record["trace_id"]
+    assert inner_record["parent_span_id"] == outer_record["span_id"]
