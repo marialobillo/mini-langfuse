@@ -8,11 +8,12 @@ logger = logging.getLogger(__name__)
 
 
 class AsyncHTTPTracer:
-    def __init__(self, url=None, api_key=None, client=None, batch_size=50):
+    def __init__(self, url=None, api_key=None, client=None, batch_size=50, flush_interval=5.0):
         self.url = url or os.environ.get("MINI_LANGFUSE_URL")
         self.api_key = api_key or os.environ.get("MINI_LANGFUSE_API_KEY")
         self.client = client or httpx.Client()
         self.batch_size = batch_size
+        self.flush_interval = flush_interval
         self._queue = asyncio.Queue()
         self._worker_task = None
 
@@ -53,11 +54,19 @@ class AsyncHTTPTracer:
     async def _worker_loop(self):
         batch = []
         while True:
-            record = await self._queue.get()
-            batch.append(record)
-            if len(batch) >= self.batch_size:
-                await self._send_batch(batch)
-                batch = []
+            try:
+                record = await asyncio.wait_for(
+                    self._queue.get(),
+                    timeout=self.flush_interval,
+                )
+                batch.append(record)
+                if len(batch) >= self.batch_size:
+                    await self._send_batch(batch)
+                    batch = []
+            except asyncio.TimeoutError:
+                if batch:
+                    await self._send_batch(batch)
+                    batch = []
 
     async def _send_batch(self, batch):
         if self.url is None or self.api_key is None:
@@ -73,3 +82,4 @@ class AsyncHTTPTracer:
                 "Mini-Langfuse: failed to flush batch",
                 exc_info=True,
             )
+

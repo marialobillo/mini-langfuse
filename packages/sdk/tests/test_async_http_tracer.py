@@ -3,7 +3,7 @@ import logging
 import httpx
 import asyncio
 
-from mini_langfuse_sdk import AsyncHTTPTracer
+from mini_langfuse_sdk import AsyncHTTPTracer, trace
 
 class FakeClient:
     def __init__(self):
@@ -190,3 +190,56 @@ async def test_async_tracer_does_nothing_when_api_key_is_missing(monkeypatch):
     await tracer.flush()
 
     assert fake.calls == []
+
+
+@pytest.mark.anyio
+async def test_async_tracer_flushes_after_interval_even_if_batch_not_full():
+    fake = FakeClient()
+    tracer = AsyncHTTPTracer(
+        url="http://example.com/traces",
+        api_key="test-key",
+        client=fake,
+        batch_size=100,
+        flush_interval=0.05,
+    )
+    await tracer.start()
+
+    tracer.capture({"name": "first"})
+    tracer.capture({"name": "second"})
+
+    await asyncio.sleep(0.15)
+
+    assert len(fake.calls) == 1
+    assert fake.calls[0]["json"] == [
+        {"name": "first"},
+        {"name": "second"},
+    ]
+
+    await tracer.stop()   
+
+@pytest.mark.anyio
+async def test_trace_with_async_http_tracer_posts_to_backend():
+    fake = FakeClient()
+    tracer = AsyncHTTPTracer(
+        url="http://example.com/traces",
+        api_key="test-key",
+        client=fake,
+        batch_size=1,
+    )
+    await tracer.start()
+
+    @trace(tracer=tracer)
+    def my_function(x):
+        return x * 2
+
+    result = my_function(21)
+
+    await asyncio.sleep(0.05)
+
+    assert result == 42
+    assert len(fake.calls) == 1
+    record_sent = fake.calls[0]["json"][0]
+    assert record_sent["name"] == "my_function"
+    assert record_sent["output"] == 42
+
+    await tracer.stop()
