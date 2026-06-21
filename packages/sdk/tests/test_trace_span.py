@@ -84,3 +84,27 @@ def test_trace_span_captures_span_id():
     assert "span_id" in record
     assert isinstance(record["span_id"], str)
     assert len(record["span_id"]) > 0
+
+def test_trace_span_generates_unique_span_ids():
+    tracer = InMemoryTracer()
+
+    with trace_span("foo", tracer=tracer):
+        pass
+    with trace_span("foo", tracer=tracer):
+        pass
+
+    first_span_id = tracer.records[-2]["span_id"]
+    second_span_id = tracer.records[-1]["span_id"]
+
+    assert first_span_id != second_span_id
+
+def test_trace_span_captures_trace_id_for_root_span():
+    tracer = InMemoryTracer()
+
+    with trace_span("root", tracer=tracer):
+        pass
+
+    record = tracer.records[-1]
+    assert "trace_id" in record
+    assert isinstance(record["trace_id"], str)
+    assert len(record["trace_id"]) > 0

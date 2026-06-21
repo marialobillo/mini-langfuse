@@ -12,6 +12,7 @@ logger = logging.getLogger(__name__)
 def trace_span(name, tracer=None):
     tracer = tracer or default_tracer
     span_id = uuid.uuid4().hex
+    trace_id = uuid.uuid4().hex
     started_at = datetime.now(timezone.utc).isoformat()
     start = time.perf_counter()
     error = None
@@ -24,6 +25,7 @@ def trace_span(name, tracer=None):
     finally:
         latency_ms = (time.perf_counter() - start) * 1000
         safe_capture(tracer, {
+                "trace_id": trace_id,
                 "span_id": span_id,
                 "name": name,
                 "latency_ms": latency_ms,
