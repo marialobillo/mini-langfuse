@@ -9,6 +9,8 @@ from contextvars import ContextVar
 
 logger = logging.getLogger(__name__)
 _current_trace_id: ContextVar = ContextVar("current_trace_id", default=None)
+_current_span_id: ContextVar = ContextVar("current_span_id", default=None)
+
 
 @contextmanager
 def trace_span(name, tracer=None):
@@ -16,12 +18,16 @@ def trace_span(name, tracer=None):
     span_id = uuid.uuid4().hex
 
     parent_trace_id = _current_trace_id.get()
+    parent_span_id = _current_span_id.get()
+
     if parent_trace_id is None:
         trace_id = uuid.uuid4().hex
     else:
         trace_id = parent_trace_id
 
-    token = _current_trace_id.set(trace_id)
+    token_trace = _current_trace_id.set(trace_id)
+    token_span = _current_span_id.set(span_id)
+
     started_at = datetime.now(timezone.utc).isoformat()
     start = time.perf_counter()
     error = None
@@ -37,6 +43,7 @@ def trace_span(name, tracer=None):
             safe_capture(tracer, {
                     "trace_id": trace_id,
                     "span_id": span_id,
+                    "parent_span_id": parent_span_id,
                     "name": name,
                     "latency_ms": latency_ms,
                     "started_at": started_at,
@@ -44,5 +51,6 @@ def trace_span(name, tracer=None):
                 })
         except Exception:
             logger.warning("Mini-Langfuse: tracer failed to capture span", exc_info=True)
-        _current_trace_id.reset(token)
+        _current_span_id.reset(token_span)
+        _current_trace_id.reset(token_trace)
         

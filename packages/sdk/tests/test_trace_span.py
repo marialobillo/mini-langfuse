@@ -1,5 +1,5 @@
 import pytest
-from mini_langfuse_sdk import trace_span, InMemoryTracer
+from mini_langfuse_sdk import trace, trace_span, InMemoryTracer
 
 def test_trace_span_captures_name():
     tracer = InMemoryTracer()
@@ -120,3 +120,41 @@ def test_nested_spans_share_trace_id():
     child_record = tracer.records[1]
 
     assert parent_record["trace_id"] == child_record["trace_id"]
+
+def test_root_span_has_no_parent_span_id():
+    tracer = InMemoryTracer()
+
+    with trace_span("root", tracer=tracer):
+        pass
+
+    record = tracer.records[-1]
+    assert record["parent_span_id"] is None
+
+def test_nested_span_has_parent_span_id_from_parent():
+    tracer = InMemoryTracer()
+
+    with trace_span("parent", tracer=tracer):
+        with trace_span("child", tracer=tracer):
+            pass
+
+    child_record = tracer.records[0]
+    parent_record = tracer.records[1]
+
+    assert child_record["parent_span_id"] == parent_record["span_id"]
+    assert parent_record["parent_span_id"] is None
+
+def test_trace_captures_trace_id_span_id_and_parent_span_id():
+    tracer = InMemoryTracer()
+
+    @trace(tracer=tracer)
+    def my_function():
+        return 42
+
+    my_function()
+
+    record = tracer.records[-1]
+    assert isinstance(record["trace_id"], str)
+    assert len(record["trace_id"]) > 0
+    assert isinstance(record["span_id"], str)
+    assert len(record["span_id"]) > 0
+    assert record["parent_span_id"] is None
