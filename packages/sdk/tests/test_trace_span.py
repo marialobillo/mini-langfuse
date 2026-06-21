@@ -73,3 +73,14 @@ def test_trace_span_logs_warning_when_tracer_fails(caplog):
         record.levelname == "WARNING" and "tracer" in record.message.lower()
         for record in caplog.records
     )
+
+def test_trace_span_captures_span_id():
+    tracer = InMemoryTracer()
+
+    with trace_span("foo", tracer=tracer):
+        pass
+
+    record = tracer.records[-1]
+    assert "span_id" in record
+    assert isinstance(record["span_id"], str)
+    assert len(record["span_id"]) > 0
