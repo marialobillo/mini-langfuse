@@ -1,7 +1,10 @@
 import logging
+from contextvars import ContextVar
 
 logger = logging.getLogger(__name__)
 
+_current_trace_id: ContextVar = ContextVar("current_trace_id", default=None)
+_current_span_id: ContextVar = ContextVar("current_span_id", default=None)
 
 def build_error(exc: Exception) -> dict:
     """Build the error dict captured in a trace record."""
