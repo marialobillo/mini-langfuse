@@ -108,3 +108,15 @@ def test_trace_span_captures_trace_id_for_root_span():
     assert "trace_id" in record
     assert isinstance(record["trace_id"], str)
     assert len(record["trace_id"]) > 0
+
+def test_nested_spans_share_trace_id():
+    tracer = InMemoryTracer()
+
+    with trace_span("parent", tracer=tracer):
+        with trace_span("child", tracer=tracer):
+            pass
+
+    parent_record = tracer.records[0]
+    child_record = tracer.records[1]
+
+    assert parent_record["trace_id"] == child_record["trace_id"]
