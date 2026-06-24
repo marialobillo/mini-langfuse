@@ -1,10 +1,13 @@
+from typing import Any
 
 
 class InMemoryTracer:
-    def __init__(self):
+    records: list[dict[str, Any]]
+
+    def __init__(self) -> None:
         self.records = []
 
-    def capture(self, record):
+    def capture(self, record: dict[str, Any]) -> None:
         self.records.append(record)
 
 
