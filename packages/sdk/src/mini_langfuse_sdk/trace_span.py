@@ -3,14 +3,15 @@ import logging
 import uuid
 from contextlib import contextmanager
 from datetime import datetime, timezone
-from mini_langfuse_sdk._capture import build_error, safe_capture, _current_span_id, _current_trace_id
+from mini_langfuse_sdk._capture import build_error, safe_capture, _current_span_id, _current_trace_id, Tracer
 from mini_langfuse_sdk.tracer import default_tracer
+from collections.abc import Iterator
 
 logger = logging.getLogger(__name__)
 
 
 @contextmanager
-def trace_span(name, tracer=None):
+def trace_span(name: str, tracer: Tracer | None = None) -> Iterator[None]:
     tracer = tracer or default_tracer
     span_id = uuid.uuid4().hex
 
