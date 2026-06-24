@@ -4,9 +4,7 @@ import logging
 import inspect
 import uuid
 from datetime import datetime, timezone
-from contextvars import ContextVar
 from mini_langfuse_sdk._capture import _current_trace_id, _current_span_id
-
 from mini_langfuse_sdk._capture import build_error, safe_capture
 from mini_langfuse_sdk.tracer import default_tracer
 
