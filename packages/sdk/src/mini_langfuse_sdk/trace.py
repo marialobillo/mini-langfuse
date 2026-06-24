@@ -2,15 +2,20 @@ from functools import wraps, partial
 import time
 import logging
 import inspect
+from typing import Any, Callable
 import uuid
 from datetime import datetime, timezone
-from mini_langfuse_sdk._capture import _current_trace_id, _current_span_id
+from mini_langfuse_sdk._capture import Tracer, _current_trace_id, _current_span_id
 from mini_langfuse_sdk._capture import build_error, safe_capture
 from mini_langfuse_sdk.tracer import default_tracer
 
 logger = logging.getLogger(__name__)
 
-def trace(func=None, *, tracer=None):
+def trace(
+    func: Callable[..., Any] | None = None,
+    *,
+    tracer: Tracer | None = None,
+) -> Callable[..., Any]:
     if func is None:
         return partial(trace, tracer=tracer)
     if tracer is None:
@@ -18,7 +23,7 @@ def trace(func=None, *, tracer=None):
     
     if inspect.iscoroutinefunction(func):
         @wraps(func)
-        async def async_wrapper(*args, **kwargs):
+        async def async_wrapper(*args: Any, **kwargs: Any) -> Any:
             span_id = uuid.uuid4().hex
             parent_trace_id = _current_trace_id.get()
             parent_span_id = _current_span_id.get()
@@ -48,7 +53,7 @@ def trace(func=None, *, tracer=None):
                         "trace_id": trace_id,
                         "span_id": span_id,
                         "parent_span_id": parent_span_id,
-                        "name": func.__name__, 
+                        "name": getattr(func, "__name__", "<unknown>"),
                         "input": {"args": args, "kwargs": kwargs},
                         "output": output,
                         "latency_ms": latency_ms,
@@ -61,7 +66,7 @@ def trace(func=None, *, tracer=None):
         return async_wrapper
 
     @wraps(func)
-    def sync_wrapper(*args, **kwargs):
+    def sync_wrapper(*args: Any, **kwargs: Any) -> Any:
         span_id = uuid.uuid4().hex
         parent_trace_id = _current_trace_id.get()
         parent_span_id = _current_span_id.get()
@@ -91,7 +96,7 @@ def trace(func=None, *, tracer=None):
                 "trace_id": trace_id,
                 "span_id": span_id,
                 "parent_span_id": parent_span_id,
-                "name": func.__name__,
+                "name": getattr(func, "__name__", "<unknown>"),
                 "input": {"args": args, "kwargs": kwargs},
                 "output": output,
                 "latency_ms": latency_ms,
