@@ -3,7 +3,15 @@ name = "mini-langfuse-backend"
 version = "0.1.0"
 description = "Mini-Langfuse backend API server"
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.32.0",
+    "sqlalchemy[asyncio]>=2.0.36",
+    "asyncpg>=0.30.0",
+    "alembic>=1.14.0",
+    "pydantic>=2.10.0",
+    "pydantic-settings>=2.7.0",
+]
 
 [build-system]
 requires = ["hatchling"]
